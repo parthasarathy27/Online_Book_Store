@@ -1,100 +1,160 @@
-# Online Book Store - Laravel Interview Project
+# Premium Online Book Store 📚
 
-This is a Laravel-based Online Book Store application. The system allows users to view, search, and filter a catalog of books, view individual book details, and search/import book metadata using the Google Books API. It also includes an administrative dashboard to manage the inventory catalog.
-
----
-
-## Features
-
-### 1. Public Storefront Pages
-* **Home Page:** Displays a search bar, categories list with book counts, and featured books.
-* **Book Listing Page:** Displays the catalog grid with keyword search (title or author), category filters, and sorting controls (price low-to-high, price high-to-low, and alphabetical title).
-* **Book Details Page:** Shows detailed book information including cover art, category, price, availability status, description, and related books in the same category.
-* **Google Books API Explorer:** A page allowing users to search the live Google Books database in real-time, view summaries, and import metadata directly.
-
-### 2. Admin Portal (Protected)
-* **Authentication:** Secure login and logout actions using standard Laravel guard authentication.
-* **Admin Dashboard:** Tabular overview of the book catalog showing titles, authors, categories, prices, and stock availability.
-* **CRUD Management:**
-  * **Add Book:** Manually create a book or auto-fill values with one click from a Google Books API result. Supports local image upload or external cover URLs.
-  * **Edit Book:** Update book fields, pricing, cover previews, and availability status.
-  * **Delete Book:** Safely deletes books and cleans up associated cover images.
+A modern, full-featured Laravel-based Online Book Store application. The system enables users to browse, search, and filter a curated book catalog, view live metadata retrieved from the Google Books API, and place orders. It also features a secure administrative dashboard for managing inventory, handling client orders, and importing books from Google Books with one click.
 
 ---
 
-## Tech Stack
-* **PHP:** `8.0.x`
-* **Framework:** `Laravel 9.x`
-* **Database:** MySQL
-* **Styling:** Tailwind CSS (configured and compiled via Vite)
-* **Frontend Logic:** Alpine.js
+## ⚙️ System Architecture: How It Works
+
+This application follows the MVC (Model-View-Controller) architecture pattern using Laravel 9, powered by a relational MySQL database.
+
+```mermaid
+graph TD
+    User([User / Admin]) -->|HTTP Requests| Apache[Apache Web Server]
+    Apache -->|Rewrite rule| RootHtaccess[.htaccess Root Rewrite]
+    RootHtaccess -->|Redirects to| PublicDir[public/index.php]
+    PublicDir -->|Routes request| LaravelRoutes[web.php Routing]
+    LaravelRoutes -->|Invokes Controller| Controllers[Controllers]
+    
+    Controllers -->|Queries & Updates| Models[Eloquent Models]
+    Models -->|Communicates with| MySQL[(MySQL Database)]
+    
+    Controllers -->|Fetches Live Metadata| GoogleAPI[Google Books API]
+    Controllers -->|Compiles Assets| Vite[Vite & Tailwind CSS]
+    Controllers -->|Renders View| Blade[Blade & Alpine.js Views]
+    Blade --> User
+```
+
+### 1. Request Flow & Subfolder Routing
+To support smooth running inside subdirectories (like XAMPP's `/Online_Book_Store/`), a root [.htaccess](file:///d:/xampp/htdocs/Online_Book_Store/.htaccess) intercepts all traffic and transparently redirects it to the `public/` directory without exposing the directory structure:
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !/public/
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+</IfModule>
+```
+
+### 2. Core Functional Components
+* **Storefront Catalog:** Provides real-time query searching (by title or author), category filters, and sorting parameters (alphabetical or price) built directly into Eloquent database queries.
+* **Google Books API Integration:** Utilizes Laravel's HTTP Client (powered by Guzzle) to query the Google Books API. The book details page fetches real-time average ratings, page count, and publishers dynamically.
+* **Order Management System:** Authenticated customers can checkout items, view order statuses, and update their shipping details while the order is `pending`. Admins can transition order statuses (e.g., `confirmed`), which instantly allows users to access and view print-ready order receipts.
+* **Admin Inventory & CRUD:** Administrators have access to a dashboard to create, edit, delete, or import books directly from external Google Books search results.
 
 ---
 
-## Installation & Local Setup
+## 🛠️ Required Downloads & Environment Setup
 
-Follow these steps to run the application locally:
+To run this application locally, you must install the following software suites on your developer machine:
 
-### 1. Clone & Place inside Webroot
-Copy the project files to your local server path (e.g. `d:\xampp\htdocs\Online_Book_Store`).
+| Software | Purpose | Minimum Version | Download Link |
+| :--- | :--- | :--- | :--- |
+| **XAMPP / WampServer** | Local Apache server & MySQL database suite | PHP 8.0+ | [Download XAMPP](https://www.apachefriends.org/index.html) |
+| **Composer** | PHP dependency and package manager | 2.0+ | [Download Composer](https://getcomposer.org/) |
+| **Node.js & NPM** | Frontend asset bundler compiler | Node 16+ | [Download Node.js](https://nodejs.org/) |
+| **Git** | Codebase cloning and version control | Latest | [Download Git](https://git-scm.com/) |
 
-### 2. Configure Environment
-1. Copy the `.env.example` file to create a `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Configure your database connection inside `.env`. For a standard local XAMPP environment, use:
-   ```env
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=online_book_store
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
+---
 
-### 3. Create the Database
-Create a database named `online_book_store` in your local MySQL instance.
+## 📦 Project Packages & Dependencies
 
-### 4. Run Migrations & Seeders
-Run migrations to build the tables and execute seeders to populate initial categories, default books, and the admin account:
+### Backend Packages (Composer)
+These are configured in [composer.json](file:///d:/xampp/htdocs/Online_Book_Store/composer.json):
+* **`laravel/framework` (^9.19):** Core MVC structure, router, ORM (Eloquent), and template compiler.
+* **`guzzlehttp/guzzle` (^7.2):** HTTP request handler used for interacting with the external Google Books API.
+* **`laravel/sanctum` (^3.0):** Lightweight authentication guard system.
+* **`laravel/tinker` (^2.7):** Command-line REPL shell interface to interact with database models.
+* **`phpunit/phpunit` (^9.5):** Developer automated testing suite framework.
+
+### Frontend Packages (NPM)
+These are configured in [package.json](file:///d:/xampp/htdocs/Online_Book_Store/package.json):
+* **`tailwindcss` (^3.4.19):** Utility-first CSS styling design system.
+* **`vite` (^4.0.0) & `laravel-vite-plugin`:** Ultra-fast asset bundler compilation.
+* **`alpinejs`:** Minimal reactive Javascript used for dropdowns, tabs, and interactive overlays.
+* **`axios` (^1.1.2):** Promise-based HTTP client for frontend requests.
+
+---
+
+## 🚀 Installation & Local Deployment Guide
+
+Follow these sequential steps to deploy the project locally:
+
+### 1. Clone & Position in Webroot
+Clone the repository directly into your local server webroot directory (e.g., `C:\xampp\htdocs\Online_Book_Store` or `D:\xampp\htdocs\Online_Book_Store`).
+
+### 2. Install Dependencies
+Open your terminal inside the project root directory and run:
+```bash
+# Install backend PHP packages
+composer install
+
+# Install frontend Javascript packages
+npm install
+```
+
+### 3. Setup Environment variables
+Copy the `.env.example` file to create a `.env` configuration:
+```bash
+copy .env.example .env
+```
+Ensure your database credentials are set correctly inside `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=online_book_store
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 4. Database Seeding & Setup
+Create a database named `online_book_store` in phpMyAdmin or MySQL, then run the migrations and database seeders:
 ```bash
 php artisan migrate:fresh --seed
 ```
+This command will create all database tables and populate the system with pre-configured developer accounts and catalog books.
 
-**Admin Credentials:**
-* **Email:** `admin@bookstore.com`
-* **Password:** `admin123`
+#### 🔑 Seeder Accounts
+* **Customer Account:**
+  * **Email:** `user@bookstore.com`
+  * **Password:** `user123`
+* **Administrator Account:**
+  * **Email:** `admin@bookstore.com`
+  * **Password:** `admin123`
 
----
-
-## Running the Application
-
-### 1. Start Laravel Server
+### 5. Compiling Assets
+Start the local Vite development server for hot reloading:
 ```bash
-php artisan serve
+npm run dev
 ```
-The store is accessible at: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
-
-### 2. Frontend Assets Compilation
-This project uses Vite to compile Tailwind CSS.
-* **For Development (Hot Reloading):**
-  ```bash
-  npm run dev
-  ```
-* **For Production Build:**
-  ```bash
-  npm run build
-  ```
-*(Note: Production assets are already compiled and located in `public/build` for immediate run).*
+Or build minified static assets for production:
+```bash
+npm run build
+```
 
 ---
 
-## Running Automated Tests
-A comprehensive Feature Test suite is included in `tests/Feature/BookStoreTest.php` to verify routing, searching, filtering, API integrations, and the admin CRUD flow.
+## 🧪 Developer Testing Guide
 
-To run the test suite (uses an in-memory SQLite database configuration to avoid altering your local database):
+### 1. Running Automated Feature Tests
+The project features a comprehensive automated testing suite located in [BookStoreTest.php](file:///d:/xampp/htdocs/Online_Book_Store/tests/Feature/BookStoreTest.php). 
+
+To ensure developer testing does not alter your local development database, the configuration in [phpunit.xml](file:///d:/xampp/htdocs/Online_Book_Store/phpunit.xml) runs tests against an isolated **in-memory SQLite database** (`:memory:`).
+
+To execute the tests, run:
 ```bash
 vendor/bin/phpunit
 ```
-All 11 tests should pass successfully.
+*(If PHP is not globally registered in your path, use the absolute PHP execution path, e.g., `d:\xampp\php\php.exe vendor/phpunit/phpunit/phpunit`)*
+
+### 2. Manual Inspection & Verification Checklist
+Ensure the following behaviors work correctly in your local browser environment:
+1. **Public Catalog (`/books`):** Verify keyword search, filtering by categories, and sorting.
+2. **Details Page (`/books/{id}`):** Check that the Google Books API fallback details (ratings, pages, publisher) display correctly.
+3. **Checkout Flow:** Log in as a customer (`user@bookstore.com`), checkout a book, and check the dashboard order listing.
+4. **Order modification:** Verify that customers can edit their address/shipping details as long as the status is `Pending Confirmation`.
+5. **Admin Operations (`/admin/dashboard`):** Log in as an administrator (`admin@bookstore.com`), and verify:
+   * Adding new books manually or importing using the search explorer.
+   * Modifying existing books.
+   * Canceling / deleting client orders.
+   * Approving/confirming client orders to generate printable receipts.
