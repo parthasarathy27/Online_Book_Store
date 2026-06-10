@@ -8,23 +8,6 @@ A modern, full-featured Laravel-based Online Book Store application. The system 
 
 This application follows the MVC (Model-View-Controller) architecture pattern using Laravel 9, powered by a relational MySQL database and running purely on a PHP + Apache environment.
 
-```mermaid
-graph TD
-    User([User / Admin]) -->|HTTP Requests| Apache[Apache Web Server]
-    Apache -->|Rewrite rule| RootHtaccess[.htaccess Root Rewrite]
-    RootHtaccess -->|Redirects to| PublicDir[public/index.php]
-    PublicDir -->|Includes| SubdirectoryFix[public/subdirectory.php]
-    SubdirectoryFix -->|Dynamic Base Path Override| RequestCapture[Request Capture]
-    RequestCapture -->|Routes request| LaravelRoutes[web.php Routing]
-    LaravelRoutes -->|Invokes Controller| Controllers[Controllers]
-    
-    Controllers -->|Queries & Updates| Models[Eloquent Models]
-    Models -->|Communicates with| MySQL[(MySQL Database)]
-    
-    Controllers -->|Fetches Live Metadata| GoogleAPI[Google Books API]
-    Controllers -->|Renders View| Blade[Blade & Alpine.js Views]
-    Blade --> User
-```
 
 ### 1. Request Flow & Subfolder Routing
 To support smooth running inside subdirectories (like XAMPP's `/Online_Book_Store/`), a root [.htaccess](file:///d:/xampp/htdocs/Online_Book_Store/.htaccess) intercepts all traffic and transparently redirects it to the `public/` directory:
