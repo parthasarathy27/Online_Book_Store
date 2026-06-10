@@ -48,13 +48,8 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
 
-// Fix subdirectory routing on local servers (e.g. XAMPP) when accessed without /public
-if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/Online_Book_Store') === 0) {
-    if (strpos($_SERVER['REQUEST_URI'], '/Online_Book_Store/public') === false) {
-        $_SERVER['SCRIPT_NAME'] = '/Online_Book_Store/index.php';
-        $_SERVER['PHP_SELF'] = '/Online_Book_Store/index.php';
-    }
-}
+// Include dynamic subdirectory routing override for local environments
+require_once __DIR__.'/subdirectory.php';
 
 $request = Request::capture();
 $response = $kernel->handle($request)->send();

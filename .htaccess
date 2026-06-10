@@ -1,5 +1,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    
+    # If the request is for the root folder itself, rewrite to public/index.php
+    RewriteRule ^$ public/index.php [L]
+    
     # Rewrite all requests to the public directory if they don't already contain /public/
     RewriteCond %{REQUEST_URI} !/public/
     RewriteRule ^(.*)$ public/$1 [L,QSA]
