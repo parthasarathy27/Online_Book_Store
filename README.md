@@ -6,34 +6,41 @@ A modern, full-featured Laravel-based Online Book Store application. The system 
 
 ## ⚙️ System Architecture: How It Works
 
-This application follows the MVC (Model-View-Controller) architecture pattern using Laravel 9, powered by a relational MySQL database.
+This application follows the MVC (Model-View-Controller) architecture pattern using Laravel 9, powered by a relational MySQL database and running purely on a PHP + Apache environment.
 
 ```mermaid
 graph TD
     User([User / Admin]) -->|HTTP Requests| Apache[Apache Web Server]
     Apache -->|Rewrite rule| RootHtaccess[.htaccess Root Rewrite]
     RootHtaccess -->|Redirects to| PublicDir[public/index.php]
-    PublicDir -->|Routes request| LaravelRoutes[web.php Routing]
+    PublicDir -->|Includes| SubdirectoryFix[public/subdirectory.php]
+    SubdirectoryFix -->|Dynamic Base Path Override| RequestCapture[Request Capture]
+    RequestCapture -->|Routes request| LaravelRoutes[web.php Routing]
     LaravelRoutes -->|Invokes Controller| Controllers[Controllers]
     
     Controllers -->|Queries & Updates| Models[Eloquent Models]
     Models -->|Communicates with| MySQL[(MySQL Database)]
     
     Controllers -->|Fetches Live Metadata| GoogleAPI[Google Books API]
-    Controllers -->|Compiles Assets| Vite[Vite & Tailwind CSS]
     Controllers -->|Renders View| Blade[Blade & Alpine.js Views]
     Blade --> User
 ```
 
 ### 1. Request Flow & Subfolder Routing
-To support smooth running inside subdirectories (like XAMPP's `/Online_Book_Store/`), a root [.htaccess](file:///d:/xampp/htdocs/Online_Book_Store/.htaccess) intercepts all traffic and transparently redirects it to the `public/` directory without exposing the directory structure:
+To support smooth running inside subdirectories (like XAMPP's `/Online_Book_Store/`), a root [.htaccess](file:///d:/xampp/htdocs/Online_Book_Store/.htaccess) intercepts all traffic and transparently redirects it to the `public/` directory:
 ```apache
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    
+    # If the request is for the root folder itself, rewrite to public/index.php
+    RewriteRule ^$ public/index.php [L]
+    
+    # Rewrite all other requests to the public directory if they don't already contain /public/
     RewriteCond %{REQUEST_URI} !/public/
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>
 ```
+The application includes a helper [.subdirectory.php](file:///d:/xampp/htdocs/Online_Book_Store/public/subdirectory.php) loaded dynamically in `public/index.php`. This automatically detects the project folder name relative to Apache's `DOCUMENT_ROOT` and adjusts PHP's `SCRIPT_NAME` and `PHP_SELF` variables so routes match perfectly without requiring hardcoded configuration updates.
 
 ### 2. Core Functional Components
 * **Storefront Catalog:** Provides real-time query searching (by title or author), category filters, and sorting parameters (alphabetical or price) built directly into Eloquent database queries.
@@ -51,8 +58,9 @@ To run this application locally, you must install the following software suites 
 | :--- | :--- | :--- | :--- |
 | **XAMPP / WampServer** | Local Apache server & MySQL database suite | PHP 8.0+ | [Download XAMPP](https://www.apachefriends.org/index.html) |
 | **Composer** | PHP dependency and package manager | 2.0+ | [Download Composer](https://getcomposer.org/) |
-| **Node.js & NPM** | Frontend asset bundler compiler | Node 16+ | [Download Node.js](https://nodejs.org/) |
 | **Git** | Codebase cloning and version control | Latest | [Download Git](https://git-scm.com/) |
+
+*(Note: Node.js and NPM are completely optional and not required to compile assets or run this application. All frontend styles are delivered natively via CDN.)*
 
 ---
 
@@ -66,12 +74,11 @@ These are configured in [composer.json](file:///d:/xampp/htdocs/Online_Book_Stor
 * **`laravel/tinker` (^2.7):** Command-line REPL shell interface to interact with database models.
 * **`phpunit/phpunit` (^9.5):** Developer automated testing suite framework.
 
-### Frontend Packages (NPM)
-These are configured in [package.json](file:///d:/xampp/htdocs/Online_Book_Store/package.json):
-* **`tailwindcss` (^3.4.19):** Utility-first CSS styling design system.
-* **`vite` (^4.0.0) & `laravel-vite-plugin`:** Ultra-fast asset bundler compilation.
-* **`alpinejs`:** Minimal reactive Javascript used for dropdowns, tabs, and interactive overlays.
-* **`axios` (^1.1.2):** Promise-based HTTP client for frontend requests.
+### Frontend CDN Assets
+No compilation is required. Frontend UI relies on:
+* **Tailwind CSS (via Play CDN):** Integrated directly in `app.blade.php` with custom extendable brand colors.
+* **Alpine.js (via CDN):** Reactive JavaScript engine used for sidebar and dropdown toggling.
+* **FontAwesome Icons (via CDN):** Renders responsive icons for navigation and dashboards.
 
 ---
 
@@ -85,11 +92,8 @@ Clone the repository directly into your local server webroot directory (e.g., `C
 ### 2. Install Dependencies
 Open your terminal inside the project root directory and run:
 ```bash
-# Install backend PHP packages
+# Install PHP packages
 composer install
-
-# Install frontend Javascript packages
-npm install
 ```
 
 ### 3. Setup Environment variables
@@ -97,8 +101,10 @@ Copy the `.env.example` file to create a `.env` configuration:
 ```bash
 copy .env.example .env
 ```
-Ensure your database credentials are set correctly inside `.env`:
+Ensure your database credentials and `APP_URL` are set correctly inside `.env`:
 ```env
+APP_URL=http://localhost/Online_Book_Store
+
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -122,15 +128,9 @@ This command will create all database tables and populate the system with pre-co
   * **Email:** `admin@bookstore.com`
   * **Password:** `admin123`
 
-### 5. Compiling Assets
-Start the local Vite development server for hot reloading:
-```bash
-npm run dev
-```
-Or build minified static assets for production:
-```bash
-npm run build
-```
+### 5. Running the Application
+Simply start Apache and MySQL from your XAMPP Control Panel. The application will immediately be accessible in your web browser at:
+`http://localhost/Online_Book_Store/`
 
 ---
 
